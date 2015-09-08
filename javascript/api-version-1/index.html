@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+  <title>AERIUS Connect - GML validation</title>
+<link href="./css/splash.css" rel="stylesheet" type="text/css" />
+<link href="./css/login.css" rel="stylesheet" type="text/css" />
+<link href="./css/connect.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <div class="container login">
+    <div class="splash">
+      <div title="AERIUS Connect" class="logo"></div>
+      <div class="textsmall">
+        <p class="version">Versie 1.0</p>
+      </div>
+      <p class="dev">AERIUS wordt ontwikkeld in opdracht van de Rijksoverheid en de gezamenlijke provincies.</p>
+      <p class="dev">AERIUS Connect is powered by AERIUS Calculator.</p>
+    </div>
+  
+    <div class="tabContainer">
+      <ul class="topTab">
+        <li><a href="" class="current">Conversie</a></li>
+        <li><a href="validate.html">Validator</a></li>
+        <li><a href="calculate.html" >Rekenservice</a></li>
+      </ul>
+    </div>
+    
+	     <div id="collect-data" class="message-form">
+	      <div id="dropbox">
+	        <div class="text-intro">
+	          Kies een bestand (PDF, GML of CSV) om het te converteren naar de meest recente versie (GML) voor gebruik in AERIUS.
+	          U kunt ook een bestand op dit venster slepen.
+	        </div>
+	        <div class="text-center"> 
+	          <div>
+	             <!-- drag drop filename -->
+               <input type="text" id="dragdropfile" class="text-hidden" disabled/>
+               <!-- upload button filename -->
+               <input type="file" name="file" id="files"  placeholder="Kies bestand" class="small" />
+	             <input type="submit" id="gwt-debug-Send" value="Converteer" onclick="sendData()" class="small" />
+	          </div>
+	       </div>
+	       <div class="divTableRow">  
+           <div class="divTableCol text-center"><div id="validationPanel" class="text-wrap"></div>    
+         </div>
+	     </div>
+	     </div>
+	    </div>
+	       
+	     <div id="result-data" class="message-form text-hidden">
+	       <div class="text-intro">
+            Het bestand is omgezet naar de meest recente versie voor gebruik in AERIUS
+          </div>
+         <div id="result-box" class="text-center">
+            <div id="downloadArea"></div>
+            <div class="text-boxed">
+               <a href="#" onclick="showMessage()">+ Toon inhoud van geconverteerd bestand</a>
+            </div>
+            <div id="messages" class="text-scroll text-hidden"></div>
+         </div>
+    </div>
+</div>
+
+<script>
+var ws;
+var selectedFile;
+//var serverLocation = "ws://" + window.location.host + "/connect/1/services";
+var serverLocation = "ws://connect.aerius.nl/connect/1/services";
+var webSocketValid = true;
+
+if ("WebSocket" in window) {
+  ws = new WebSocket(serverLocation);
+  ws.onclose = function (event) {
+    alert("Websocket gesloten melding code:" + event.code  );
+    webSocketValid = false;
+  }
+} else {
+  alert("Geen websocket support in deze browser");
+  webSocketValid = false;
+}
+
+ws.onmessage = function helloCallback(event) {
+  var response = JSON.parse(event.data);
+  console.log(response);
+  if (response.result && response.result.successfull) {
+	  document.getElementById("result-data").classList.remove('text-hidden');
+	  document.getElementById("collect-data").classList.add('text-hidden');
+	  messages.innerText = messages.innerText + event.data + "";
+    createDownloadLink(response.result.filename, response.result.data);
+  } else if (response.result && !response.result.successfull) {
+	  var errors = ["Document bevat errors."];
+      
+    var i, il = response.result.errors.length;
+      
+    for (i = 0; i < il; i++) {
+      var error = response.result.errors[i];
+      var errorText = error.errorDescription + "(" + error.errorCode + ")";
+        
+      if (error.data) {
+        errorText += " {" + error.data.join(",") + "}.";
+      }
+        
+      errors.push(errorText);
+    }
+    
+    validationPanel.textContent = errors.join("\n");
+  } else if (response.error) {
+	  validationPanel.textContent = "Error: " + response.error.message;
+  } else {
+	  validationPanel.textContent = "Onverwachte fout: " + response; 
+  }
+};
+
+function validateGml(fileDto) {
+	var rpcRequest = {
+		"jsonrpc" : "2.0",
+		"id" : Date.now(),
+		"method" : "gmlconvert.convert",
+		"params" : {
+			"file" : fileDto,
+		}
+	};
+	var request = JSON.stringify(rpcRequest);
+	console.log(request);
+	ws.send(request);
+}
+
+function sendData() {
+	var valid = true;
+	validationPanel.innerHTML = "";
+	
+  if (!webSocketValid) {
+    validationPanel.appendChild(document.createElement("div")).appendChild(document.createTextNode('Websocket connection not available.'));    
+    valid = false; 
+  }
+
+	if (selectedFile == null && document.getElementById("files").files.length == 0) {
+	  validationPanel.appendChild(document.createElement("div")).appendChild(document.createTextNode('No file attached.'));    
+	  valid = false;
+	}
+    
+  if (valid) {
+    if (selectedFile == null) {
+      selectedFile = document.getElementById("files").files[0];
+    }
+    readFileAndSend(selectedFile);
+   }
+}
+
+function readFileAndSend(file) {
+   var reader = new FileReader();
+   reader.onload = function(event) {
+       var dataurl = event.target.result;
+       var encodedData = dataurl.substring(dataurl.lastIndexOf(",") + 1);
+       var fileDto = {
+           "name": file.name,
+           "data": encodedData
+       };
+       validateGml(fileDto);
+   };
+   reader.readAsDataURL(file);
+}
+
+function createDownloadLink(filename, inputData) {
+  data = "data:text/plain;charset=utf-8," + inputData;
+  var a = document.createElement('a');
+  a.setAttribute("download", "" + filename);
+  a.setAttribute("href", data);
+  var b = document.createElement("input");
+  b.setAttribute("type", "submit");
+  b.setAttribute("class", "downloadgml")
+  b.setAttribute("value", "Download " + filename + "" + " (-KB)");
+  a.appendChild(b);
+  downloadArea.appendChild(a);
+}
+
+function showMessage() {
+	if ( document.getElementById("messages").classList.contains('text-hidden') ) {
+		document.getElementById("messages").classList.remove('text-hidden');
+	} else {
+		document.getElementById("messages").classList.add('text-hidden');
+	}
+}
+
+var	dropHandler;
+
+dropHandler = document.getElementById("dropbox");
+dropHandler.addEventListener("dragenter", dragenter, false);
+dropHandler.addEventListener("dragover", dragover, false);
+dropHandler.addEventListener("drop", drop, false);
+
+function dragenter(e) {
+  e.stopPropagation();
+  e.preventDefault();
+}
+
+function dragover(e) {
+  e.stopPropagation();
+  e.preventDefault();
+}
+
+function drop(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  
+  // does not work on alle browsers.
+  document.getElementById("files").files = event.dataTransfer.files;
+  
+  // show drag drop filename
+  document.getElementById("dragdropfile").value = event.dataTransfer.files[0].name;
+  document.getElementById("dragdropfile").classList.remove('text-hidden');
+  document.getElementById("files").classList.add('text-hidden');
+  
+  console.log(event.dataTransfer.files[0].name);
+  selectedFile = event.dataTransfer.files[0];
+
+}
+	
+</script>
+
+</body>
+</html>

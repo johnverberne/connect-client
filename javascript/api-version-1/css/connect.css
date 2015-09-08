@@ -1,0 +1,145 @@
+/* connect style topBar etc */
+
+.strong {
+	font-weight:bold;
+}
+
+.divTable {
+	color: #000;
+  display:table;         
+  width:100%;         
+  background-color:#fff;                
+}
+
+.divTableRow {
+  display:table-row;
+  width:auto;
+  clear:both;  
+}
+
+.divTableCol {
+  float:left;
+  display:table-column;         
+  width:250px;  
+  margin: 8px;       
+  background-color:#fff;  
+  border: 2px;
+}
+
+.splash {
+ background: #fcdbbb;
+}
+
+.tabContainer {
+  padding: 10px 10px 0px 15px;
+  background: #fcdbbb;
+}
+
+ul.topTab {
+  list-style-type: none;
+  width: 100%;
+  position: relative;
+  height: 35px;
+  font-size: 13px;
+  margin: 0;
+  padding: 11px 0 0 0;
+}
+
+ul.topTab li {
+  display: block;
+  float: left;
+  margin: 0 0 0 4px;
+  height: 35px;
+}
+
+ul.topTab li a {
+  display: block;
+  float: left;
+  color: #000;
+  background: #fcdbbb;
+  line-height: 35px;
+  text-decoration: none;
+  padding: 0 17px 0 18px;
+  height: 35px;
+}
+
+ul.topTab li a.current {
+	color: #2E4560;
+  background: #fff;
+}
+
+ul.topTab li a.current:hover {
+	color: #2E4560;
+  background: #fff;
+}
+
+.text-intro {
+	color: blue;
+	padding-top: 30px;
+	padding-left: 30px;
+}
+
+.text-center {
+	display: inline-block;
+	margin-top: 20px;
+  margin-left: 30px;
+  margin-right: 10px;
+  white-space:nowrap;
+}
+
+.text-boxed {
+  border: 1px solid black;
+  padding: 8px;
+  white-space:nowrap;
+}
+
+.text-result {
+	border: 1px solid black;
+	white-space:nowrap;
+	height: 30px;
+}
+
+.text-scroll {
+  border: 1px solid black;
+  border-top: 0px;
+  height: 120px;
+  overflow-y: scroll;
+  width:200px;
+  word-wrap: break-word;
+}
+
+.text-wrap {
+	width: 200px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.text-hidden {
+	display: none;
+}
+
+.text-strong {
+	font-weight: bold;
+}
+
+input[type="submit"].downloadgml {
+	margin-bottom: 20px;
+	width: 520px;
+}
+
+input[type="submit"].small {
+	margin-bottom: 20px;
+	width: 120px;
+}
+
+.message-form {
+  color: black;
+  background-color: #ffffff;
+  padding-bottom: 20px;
+}
+
+.message-form div {
+  vertical-align: top;
+  width: 500px;
+}
+
