@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import json
 import time
-import base64
 from os import listdir
 import os
 from pprint import pprint
@@ -11,27 +10,31 @@ Open the file, create json object send this json to AERIUS connect endpoint
 Process the result test on successful and write the result to a result file
 """
 def gml_convert(inputDir, filename, outputDir):
-	f = open(os.path.join(inputDir, filename),'r')
+	f = open(os.path.join(inputDir, filename),'rb')
 	bytes = f.read()
 	f.close
-	data = {}
-	data["jsonrpc"] = "2.0"
-	data["id"] = long(time.time() * 1000)
-	data["method"] = "gmlconvert.convert"
-	params = {}
-	file = {}
-	file["name"] = filename
-	file["data"] = bytes.encode("base64","strict") #encode
-	##ile["data"] = base64.b64encode(bytes)
-	params["file"] = file
-	data["params"] = params
-
-	json_data = json.dumps(data)
+	# create json text object
+	json_text = """
+	{
+		"jsonrpc":"2.0",
+		"id":0,
+		"method":"gmlconvert.convert",
+		"params":{"file":
+			{
+				"name":"",
+				"data":""
+			}}
+	}
+	"""
+	# replace paramaters
+	json_data = json.loads(json_text)
+	json_data["id"] = long(time.time() * 1000) #create unique id
+	json_data["params"]["file"]["name"] = filename #add filename
+	json_data["params"]["file"]["data"] = bytes.encode("base64","strict") #encode the data
 
 	try:
 		from websocket import create_connection
 		ws = create_connection("ws://connect.aerius.nl/connect/1/services", 10000)
-		#ws = create_connection("ws://localhost:8080/connect/1/services", 10000)
 		
 	except Exception, msg:
 		print "Unexpected connection error %s" % msg
@@ -39,14 +42,14 @@ def gml_convert(inputDir, filename, outputDir):
 		
 	try:
 	    #sending data
-		ws.send(json_data)
+		ws.send(json.dumps(json_data))
 		result = ws.recv()
 		# write result part
 		if result.find("successfull") > -1:
 			if (result.find("filename") > -1):
 				# we have result
 				json_input = json.loads(result)
-				if not (filename.lower().find('.gml')):
+				if not (filename.lower().find('.gml') > -1):
 					filename += ".gml"
 				filename = os.path.join(outputDir, filename)
 				print "writing result %s" % filename

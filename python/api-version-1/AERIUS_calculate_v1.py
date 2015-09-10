@@ -9,38 +9,46 @@ from pprint import pprint
 Open the file, create json object send this json to AERIUS connect endpoint
 """
 def gml_calculate(inputDir, filename):
-	f = open(os.path.join(inputDir, filename),'r')
-	input = f.read()
+	f = open(os.path.join(inputDir, filename),'rb')
+	bytes = f.read()
 	f.close
-	data = {}
-	data["jsonrpc"] = "2.0"
-	data["id"] = long(time.time() * 1000)
-	data["method"] = "calculator.calculate"
-	params = {}
-	file = {}
-	file["name"] = filename
-	file["data"] = input.encode("base64","strict") #encode
-	params["file"] = file
-	params["listener"] = long(time.time() * 1000) + 1
-	options = {}
-	substances = ["NOX","NH3"]
-	options["substances"] = substances
-	options["calculationType"] = "PERMIT"
-	options["email"] = "john.verberne@gmail.com"
-	options["exportType"] = "GIS_ALL"
-	options["reference"] = "opdracht op " + time.strftime("%c")
-	options["tempProject"] = 0
-	options["tempProjectYears"] = 1
-	options["year"] = "2021"
-	params["options"] = options
-	data["params"] = params
+	# create json text object
+	json_text = """
+	{
+		"jsonrpc":"2.0",
+		"id":0,
+		"method":"calculator.calculate",
+		"params":{"listener":0,
+			"file":
+			{
+				"name":"",
+				"data":""
+			},
+			"options":
+			{
+				"calculationType":"PERMIT",
+				"exportType":"GIS_ALL",
+				"email":"john.verberne@gmail.com",
+				"maximumRange":10000,
+				"reference":"uw reference",
+				"substances":["NOX","NH3"],
+				"tempProject":0,
+				"tempProjectYears":1,
+				"year":"2015"
+			}}
+	}
+	"""
+	# replace paramaters
+	json_data = json.loads(json_text)
+	json_data["id"] = long(time.time() * 1000) #create unique id
+	json_data["params"]["listener"]= long(time.time() * 1000) #call back create unique id
+	json_data["params"]["file"]["name"] = filename #add filename
+	json_data["params"]["file"]["data"] = bytes.encode("base64","strict") #encode the data
+	json_data["params"]["options"]["reference"] = "uw reference " + time.strftime("%c")
 	
-	json_data = json.dumps(data)
-
 	try:
 		from websocket import create_connection
 		ws = create_connection("ws://connect.aerius.nl/connect/1/services", 10000)
-		#ws = create_connection("ws://localhost:8080/connect/1/services", 10000)
 		
 	except Exception, msg:
 		print "Unexpected connection error %s" % msg
@@ -48,7 +56,7 @@ def gml_calculate(inputDir, filename):
 		
 	try:
 	    # sending data
-		ws.send(json_data)
+		ws.send(json.dumps(json_data))
 		result = ws.recv()
 		# write result part
 		if (result.find("successful") > -1 or result.find("result") > -1):
